@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { loadConfig } from './config.js';
 import { initSession, closeAllSessions } from './whatsapp.js';
 import { sendToWebhook } from './webhook.js';

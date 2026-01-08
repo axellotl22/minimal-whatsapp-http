@@ -20,6 +20,11 @@ if [ ! -f "config.yaml" ]; then
     error "config.yaml not found. Copy config.example.yaml and configure it."
 fi
 
+if [ ! -f ".env" ]; then
+    error ".env not found. Copy .env.example and configure it."
+fi
+
+
 if ! command -v docker &> /dev/null; then
     error "Docker is not installed"
 fi
