@@ -44,6 +44,53 @@ components:
           type: string
           example: "+49111111111"
 
+    BulkSendRequest:
+      type: object
+      required:
+        - messages
+      properties:
+        messages:
+          type: array
+          maxItems: 1000
+          items:
+            type: object
+            required:
+              - to
+              - message
+            properties:
+              to:
+                type: string
+                pattern: '^\+\d{10,15}$'
+                example: "+49111111111"
+              message:
+                type: string
+                example: "Hello"
+
+    BulkSendResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [scheduled]
+          example: scheduled
+        recipients:
+          type: integer
+          example: 5
+          description: Number of unique recipients
+        messages:
+          type: integer
+          example: 10
+          description: Total number of valid messages
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              index:
+                type: integer
+              error:
+                type: string
+
     WebhookPayload:
       type: object
       description: Payload sent to configured webhook on incoming messages
@@ -154,6 +201,76 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
               example:
                 error: "Failed to send message"
+
+  /send/bulk:
+    post:
+      summary: Bulk send WhatsApp messages
+      description: |
+        Send multiple WhatsApp messages asynchronously.
+        
+        - Messages to the same recipient are grouped and combined with double newlines
+        - Returns immediately with "scheduled" status
+        - Messages are sent in background with random delays (10-750ms) between recipients
+        - Maximum 1000 messages per request
+      operationId: sendBulkMessages
+      tags:
+        - Messages
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BulkSendRequest'
+            examples:
+              bulk:
+                summary: Multiple messages
+                value:
+                  messages:
+                    - to: "+49111111111"
+                      message: "First message"
+                    - to: "+49111111111"
+                      message: "Second message (combined)"
+                    - to: "+49222222222"
+                      message: "Different recipient"
+      responses:
+        '200':
+          description: Messages scheduled for delivery
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BulkSendResponse'
+              example:
+                status: scheduled
+                recipients: 2
+                messages: 3
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingMessages:
+                  value:
+                    error: 'Missing or invalid "messages" array'
+                emptyMessages:
+                  value:
+                    error: 'Messages array cannot be empty'
+                tooMany:
+                  value:
+                    error: 'Maximum 1000 messages per request'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: WhatsApp session not connected
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   /health:
     get:

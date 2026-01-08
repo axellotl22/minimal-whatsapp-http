@@ -46,6 +46,30 @@ curl -X POST http://localhost:3000/send \
 {"status": "sent", "to": "+1234567890"}
 ```
 
+### Bulk Send Messages
+
+Send multiple messages at once. Messages to the same recipient are grouped and combined with double newlines.
+
+```bash
+curl -X POST http://localhost:3000/send/bulk \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: your-api-key" \
+  -d '{
+    "messages": [
+      {"to": "+1234567890", "message": "First message"},
+      {"to": "+1234567890", "message": "Second message"},
+      {"to": "+0987654321", "message": "Different recipient"}
+    ]
+  }'
+```
+
+**Response:**
+```json
+{"status": "scheduled", "recipients": 2, "messages": 3}
+```
+
+Messages are sent asynchronously with random delays (10-750ms) between recipients to avoid rate limiting.
+
 ### Health Check
 
 ```bash
